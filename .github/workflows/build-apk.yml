@@ -24,27 +24,91 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Find Android project
-        id: project
+      - name: Create Android project structure
         shell: bash
         run: |
-          PROJECT_DIR=$(dirname "$(find . -name settings.gradle -type f | head -n 1)")
-          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
-            PROJECT_DIR="."
-          fi
-          echo "Project directory: $PROJECT_DIR"
-          echo "project_dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          mkdir -p app/src/main/java/com/earnly/app
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/values
 
-      - name: Build Debug APK
-        run: |
-          gradle -p "${{ steps.project.outputs.project_dir }}" assembleDebug
+          cp MainActivity.java app/src/main/java/com/earnly/app/MainActivity.java
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cp index.html app/src/main/assets/index.html
+          cp styles.xml app/src/main/res/values/styles.xml
+          cp ic_earnly.xml app/src/main/res/drawable/ic_earnly.xml
+          cp earnly_logo.png app/src/main/res/drawable/earnly_logo.png
+          cp ic_launcher.png app/src/main/res/mipmap-mdpi/ic_launcher.png
 
-      - name: Find APK
+      - name: Create Gradle settings
+        shell: bash
         run: |
-          find . -name "app-debug.apk" -type f
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "EarnlyApp"
+          include(":app")
+          EOF
+
+      - name: Create root Gradle build
+        shell: bash
+        run: |
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+
+      - name: Create Gradle properties
+        shell: bash
+        run: |
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+
+      - name: Create app Gradle build
+        shell: bash
+        run: |
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.earnly.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.earnly.app'
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
+
+      - name: Build APK
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Earnly-Debug-APK
-          path: '**/app/build/outputs/apk/debug/app-debug.apk'
+          path: app/build/outputs/apk/debug/app-debug.apk
