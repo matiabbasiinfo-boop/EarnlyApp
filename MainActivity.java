@@ -2,6 +2,7 @@ package com.earnly.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.view.View;
@@ -12,7 +13,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.content.Intent;
+import android.widget.FrameLayout;
 
 public class MainActivity extends Activity {
 
@@ -27,13 +28,18 @@ public class MainActivity extends Activity {
 
         Window window = getWindow();
 
-        // Dark system bars
+        // Dark system-bar background
         window.setStatusBarColor(Color.rgb(7, 17, 31));
         window.setNavigationBarColor(Color.rgb(7, 17, 31));
 
-        // Keep system icons suitable for the dark background
+        // White system-bar icons
         window.getDecorView().setSystemUiVisibility(0);
 
+        // Root container
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.rgb(7, 17, 31));
+
+        // WebView
         webView = new WebView(this);
 
         WebSettings settings = webView.getSettings();
@@ -51,8 +57,11 @@ public class MainActivity extends Activity {
 
         settings.setMediaPlaybackRequiresUserGesture(false);
 
+        webView.setBackgroundColor(Color.rgb(7, 17, 31));
+
         webView.setWebViewClient(new WebViewClient());
 
+        // File upload support
         webView.setWebChromeClient(new WebChromeClient() {
 
             @Override
@@ -67,47 +76,69 @@ public class MainActivity extends Activity {
 
                 MainActivity.this.filePathCallback = filePathCallback;
 
-                Intent intent = fileChooserParams.createIntent();
-
-                                               bottomInset
-                        );
-
-                        return insets;
-                    }
+                try {
+                    Intent intent = fileChooserParams.createIntent();
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                    return true;
+                } catch (Exception e) {
+                    MainActivity.this.filePathCallback = null;
+                    return false;
                 }
-        );
+            }
+        });
+
+        // Add WebView to root
+        FrameLayout.LayoutParams webParams =
+                new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                );
+
+        root.addView(webView, webParams);
 
         setContentView(root);
 
-        // Load the existing HTML. No HTML modification required.
-        webView.loadUrl("file:///android_asset/index.html");
-    }
+        /*
+         * Android 15 uses edge-to-edge for apps targeting SDK 35.
+         *
+         * We manually keep the WebView below the status bar
+         * and above the navigation bar.
+         */
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
 
-    @Override
-    public void onBackPressed() {
+            WindowInsets systemInsets = insets;
 
-        if (!homeShown) {
+            int top = systemInsets.getInsets(
+                    WindowInsets.Type.statusBars()
+            ).top;
 
-            webView.evaluateJavascript(
-                    "if(typeof go === 'function'){go('home');}",
-                    null
-            );
+            int bottom = systemInsets.getInsets(
+                    WindowInsets.Type.navigationBars()
+            ).bottom;
 
-            homeShown = true;
-            return;
-        }
+            int left = systemInsets.getInsets(
+                    WindowInsets.Type.systemBars()
+            ).left;
 
-        super.onBackPressed();
-    }
+            int right = systemInsets.getInsets(
+                    WindowInsets.Type.systemBars()
+            ).right;
 
-    @Override
-    protected void onDestroy() {
+            FrameLayout.LayoutParams params =
+                    (FrameLayout.LayoutParams) webView.getLayoutParams();
 
-        if (webView != null) {
-            webView.destroy();
-            webView = null;
-        }
+            params.leftMargin = left;
+            params.topMargin = top;
+            params.rightMargin = right;
+            params.bottomMargin = bottom;
 
-        super.onDestroy();
-    }
-}
+            webView.setLayoutParams(params);
+
+            return insets;
+        });
+
+        // Apply the insets immediately
+        root.requestApplyInsets();
+
+        // Load your existing HTML.
+        // HTML code does
