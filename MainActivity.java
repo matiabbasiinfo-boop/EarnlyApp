@@ -2,6 +2,10 @@ package com.earnly.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.graphics.Color;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowInsets;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -15,6 +19,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Window window = getWindow();
+
+        // Keep system bars visible
+        window.setStatusBarColor(Color.rgb(8, 20, 45));
+        window.setNavigationBarColor(Color.rgb(8, 20, 45));
 
         webView = new WebView(this);
 
@@ -33,7 +43,32 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
 
-        // Load your existing HTML without changing it
+        /*
+         * Prevent the HTML/WebView from going underneath
+         * the phone's status bar and navigation bar.
+         */
+        webView.setOnApplyWindowInsetsListener(
+                new View.OnApplyWindowInsetsListener() {
+                    @Override
+                    public WindowInsets onApplyWindowInsets(
+                            View view,
+                            WindowInsets insets) {
+
+                        int top = insets.getSystemWindowInsetTop();
+                        int bottom = insets.getSystemWindowInsetBottom();
+
+                        view.setPadding(
+                                0,
+                                top,
+                                0,
+                                bottom
+                        );
+
+                        return insets;
+                    }
+                }
+        );
+
         webView.loadUrl("file:///android_asset/index.html");
 
         setContentView(webView);
@@ -42,7 +77,6 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() {
 
-        // First Back = return to Home inside the HTML app
         if (!homeShown) {
             webView.evaluateJavascript(
                     "if(typeof go === 'function'){go('home');}",
@@ -53,12 +87,12 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // Second Back = exit app
         super.onBackPressed();
     }
 
     @Override
     protected void onDestroy() {
+
         if (webView != null) {
             webView.destroy();
         }
