@@ -1,12 +1,14 @@
 package com.earnly.app;
 
 import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
 import android.graphics.Color;
+import android.graphics.Insets;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -16,9 +18,12 @@ import android.webkit.WebViewClient;
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private FrameLayout root;
+    private FrameLayout.LayoutParams webViewParams;
+
     private boolean homeShown = true;
 
-    private final int BG_COLOR = Color.rgb(7, 19, 42);
+    private static final int APP_BACKGROUND = Color.rgb(7, 19, 42);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,58 +31,60 @@ public class MainActivity extends Activity {
 
         Window window = getWindow();
 
-        // Android 15 uses edge-to-edge.
-        // Keep the system bars visible and use the app background
-        // behind the transparent system-bar areas.
-        window.setStatusBarColor(BG_COLOR);
-        window.setNavigationBarColor(BG_COLOR);
+        // Android 15 / target SDK 35
+        // Keep system bars visible.
+        window.setStatusBarColor(APP_BACKGROUND);
+        window.setNavigationBarColor(APP_BACKGROUND);
 
-        if (android.os.Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= 29) {
             window.setStatusBarContrastEnforced(false);
             window.setNavigationBarContrastEnforced(false);
         }
 
-        // Dark background with LIGHT status-bar icons.
+        // Use light-colored status/navigation icons.
         window.getDecorView().setSystemUiVisibility(0);
 
-        // Root container fills the screen.
-        // We will inset the WebView using WindowInsets.
-        FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(BG_COLOR);
+        // Root screen
+        root = new FrameLayout(this);
+        root.setBackgroundColor(APP_BACKGROUND);
 
+        // WebView
         webView = new WebView(this);
+        webView.setBackgroundColor(APP_BACKGROUND);
 
         WebSettings settings = webView.getSettings();
 
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
+
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
 
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
-        settings.setMediaPlaybackRequiresUserGesture(false);
 
-        webView.setBackgroundColor(BG_COLOR);
+        settings.setMediaPlaybackRequiresUserGesture(false);
 
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient());
 
-        FrameLayout.LayoutParams webParams =
-                new FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                );
-
-        root.addView(webView, webParams);
-
         /*
          * IMPORTANT:
          *
-         * Android 15 draws the application edge-to-edge.
-         * We therefore move the WebView itself below the
-         * status bar and above the navigation bar.
+         * The WebView starts with zero margins.
+         * WindowInsets will move the ENTIRE WebView
+         * below the Android status bar.
+         */
+        webViewParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        );
+
+        root.addView(webView, webViewParams);
+
+        /*
+         * Android 15 sends the system-bar sizes here.
          */
         root.setOnApplyWindowInsetsListener(
                 new View.OnApplyWindowInsetsListener() {
@@ -87,28 +94,79 @@ public class MainActivity extends Activity {
                             View view,
                             WindowInsets insets) {
 
-                        int topInset = 0;
-                        int bottomInset = 0;
+                        int top = 0;
+                        int bottom = 0;
 
-                        if (android.os.Build.VERSION.SDK_INT >= 30) {
+                        if (Build.VERSION.SDK_INT >= 30) {
 
-                            android.graphics.Insets systemBars =
-                                    insets.getInsets(
-                                            WindowInsets.Type.systemBars()
-                                    );
+                            Insets bars = insets.getInsets(
+                                    WindowInsets.Type.systemBars()
+                            );
 
-                            topInset = systemBars.top;
-                            bottomInset = systemBars.bottom;
+                            top = bars.top;
+                            bottom = bars.bottom;
 
                         } else {
 
-                            topInset = insets.getSystemWindowInsetTop();
-                            bottomInset = insets.getSystemWindowInsetBottom();
+                            top = insets.getSystemWindowInsetTop();
+                            bottom = insets.getSystemWindowInsetBottom();
                         }
 
                         /*
-                         * This is the key fix.
+                         * THIS is the important part.
                          *
+                         * Move WebView itself below the status bar.
+                         */
+                        FrameLayout.LayoutParams params =
+                                (FrameLayout.LayoutParams)
+                                        webView.getLayoutParams();
+
+                        params.topMargin = top;
+                        params.bottomMargin = bottom;
+                        params.leftMargin = 0;
+                        params.rightMargin = 0;
+
+                        webView.setLayoutParams(params);
+
+                        return insets;
+                    }
+                }
+        );
+
+        setContentView(root);
+
+        // Existing HTML remains completely unchanged.
+        webView.loadUrl("file:///android_asset/index.html");
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if (!homeShown) {
+
+            webView.evaluateJavascript(
+                    "if(typeof go === 'function'){go('home');}",
+                    null
+            );
+
+            homeShown = true;
+            return;
+        }
+
+        super.onBackPressed();
+    }
+
+    @Override
+    protected void onDestroy() {
+
+        if (webView != null) {
+            webView.destroy();
+            webView = null;
+        }
+
+        super.onDestroy();
+    }
+}                         *
                          * The WebView does NOT occupy the status-bar
                          * area anymore.
                          */
