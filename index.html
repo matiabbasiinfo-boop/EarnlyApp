@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Earnly — Rewards Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#07111f;--card:#0d1b2e;--card2:#11243b;--text:#f5f8ff;--muted:#91a4bd;
+  --primary:#6c63ff;--cyan:#20d9ff;--green:#35e08a;--orange:#ffb84d;--red:#ff5f73;
+  --border:rgba(255,255,255,.09);--shadow:0 18px 50px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 20% 0%,#18265a 0,#07111f 42%,#050b14 100%);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+button,input,select{font:inherit} button{cursor:pointer}
+.app{width:min(100%,520px);margin:auto;min-height:100vh;padding-bottom:86px}
+.top{padding:16px 18px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px}.top-actions{position:static;display:flex;align-items:center;gap:8px;margin-left:auto}.top-action-btn{position:relative;width:42px;height:42px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.035));color:#eef4ff;display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.06);transition:.2s}.top-action-btn:hover{border-color:rgba(108,99,255,.55);background:linear-gradient(145deg,rgba(108,99,255,.18),rgba(255,255,255,.05));transform:translateY(-1px)}.top-action-btn:active{transform:scale(.94)}.top-action-btn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 5px rgba(0,0,0,.25))}
+.brand{display:flex;gap:11px;align-items:center}.logo{width:43px;height:43px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--primary),var(--cyan));box-shadow:0 8px 28px #6c63ff55;font-size:22px}
+.brand b{font-size:19px}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.iconbtn{border:1px solid var(--border);background:#ffffff08;color:#fff;width:42px;height:42px;border-radius:14px}
+.page{display:none;padding:4px 16px}.page.active{display:block}
+.hero{padding:18px 18px 20px;border:1px solid var(--border);border-radius:25px;background:linear-gradient(145deg,#172b4a,#0b1729);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:#6c63ff2b;right:-70px;top:-80px;filter:blur(5px)}
+.eyebrow{color:#9eafff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px}.balance{font-size:35px;font-weight:850;margin:5px 0}.balance span{font-size:16px;color:var(--muted);font-weight:600}.sub{color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.stat{background:#ffffff08;border:1px solid var(--border);padding:12px;border-radius:16px}.stat b{font-size:17px}.stat small{display:block;color:var(--muted);margin-top:3px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:16px 0}.btn{border:0;border-radius:15px;padding:13px 14px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--primary),#8a5cff);box-shadow:0 9px 25px #6c63ff33}.btn.alt{background:#ffffff09;border:1px solid var(--border);box-shadow:none}.btn:active{transform:scale(.97)}
+.section-title{display:flex;align-items:end;justify-content:space-between;margin:22px 2px 10px}.section-title h2{font-size:18px;margin:0}.section-title span{color:var(--muted);font-size:11px}
+.cards{display:grid;gap:12px}.plan{position:relative;padding:17px;border-radius:21px;background:linear-gradient(145deg,#10223a,#0b1728);border:1px solid var(--border);overflow:hidden;transition:.25s}.plan:hover{transform:translateY(-2px);border-color:#ffffff22}.plan.featured{border-color:#6c63ff88;box-shadow:0 12px 35px #6c63ff18}.badge{position:absolute;right:13px;top:13px;background:#6c63ff;color:#fff;padding:5px 9px;border-radius:20px;font-size:9px;font-weight:800}.plan-head{display:flex;gap:12px;align-items:center}.plan-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#ffffff0b;font-size:20px}.plan h3{margin:0;font-size:17px}.price{font-weight:850;font-size:23px;margin-top:2px}.price small{font-size:11px;color:var(--muted);font-weight:500}.details{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:13px 0}.pill{padding:9px;background:#ffffff06;border-radius:11px;font-size:11px;color:#b9c8db}.pill b{display:block;color:#fff;font-size:13px;margin-top:2px}.plan .btn{width:100%;padding:11px}
+.notice{margin-top:14px;padding:11px 13px;border-radius:13px;background:#ffb84d0d;border:1px solid #ffb84d22;color:#d9c49d;font-size:10px;line-height:1.45}
+.adbox{margin-top:16px;padding:18px;border-radius:23px;background:linear-gradient(145deg,#142944,#0b1728);border:1px solid var(--border);text-align:center}.adcircle{width:92px;height:92px;border-radius:50%;margin:5px auto 14px;display:grid;place-items:center;background:conic-gradient(var(--cyan) 0deg,#ffffff10 0deg);position:relative}.adcircle:before{content:"";position:absolute;inset:7px;border-radius:50%;background:#0c1a2d}.adcircle b{position:relative;font-size:21px}.adbox h3{margin:4px 0}.adbox p{font-size:12px;color:var(--muted);margin:5px 0 15px}.watch{width:100%}
+.form{display:grid;gap:11px}.field{background:#ffffff06;border:1px solid var(--border);border-radius:15px;padding:12px}.field label{display:block;color:var(--muted);font-size:10px;margin-bottom:5px}.field input,.field select{width:100%;border:0;outline:0;background:transparent;color:#fff;font-size:14px}.field select option{background:#0d1b2e}.history{display:grid;gap:8px;margin-top:12px}.row{display:flex;justify-content:space-between;align-items:center;padding:13px;border-radius:15px;background:#ffffff06;border:1px solid var(--border);font-size:12px}.row small{display:block;color:var(--muted);margin-top:3px}.plus{color:var(--green);font-weight:800}.minus{color:var(--orange);font-weight:800}
+.bottom{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(calc(100% - 24px),500px);padding:8px;background:rgba(9,20,35,.94);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.10);border-radius:22px;display:grid;grid-template-columns:repeat(5,1fr);gap:5px;z-index:20;box-shadow:0 15px 45px rgba(0,0,0,.42)}.nav{border:0;background:transparent;color:#7387a2;padding:7px 3px 6px;border-radius:16px;font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;transition:.2s}.navicon{width:34px;height:30px;border-radius:11px;display:grid;place-items:center;background:transparent;transition:.25s}.navicon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.nav.active .navicon svg{filter:drop-shadow(0 0 7px rgba(110,100,255,.8))}.nav.active{color:#fff;background:linear-gradient(135deg,#6c63ff2b,#20d9ff0d);box-shadow:inset 0 0 0 1px #ffffff10}.nav.active .navicon{background:linear-gradient(135deg,var(--primary),#795dff);box-shadow:0 5px 15px #6c63ff55;color:#fff;transform:translateY(-1px)}.nav:active{transform:scale(.95)}
+.activeplan{margin:12px 0 16px;padding:13px 14px;border:1px solid #6c63ff33;background:linear-gradient(110deg,#6c63ff16,#20d9ff08);border-radius:18px;display:flex;justify-content:space-between;align-items:center}.activeplan-left{display:flex;gap:10px;align-items:center}.activeplan-icon{width:39px;height:39px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#6c63ff,#20bfe8);font-size:17px;box-shadow:0 7px 20px #6c63ff35}.activeplan small,.planmini small{display:block;color:#8498b3;font-size:8px;font-weight:800;letter-spacing:1px}.activeplan b{display:block;font-size:14px;margin-top:2px}.activeplan span{display:block;color:#8fa3bc;font-size:10px;margin-top:2px}.active-status{font-size:9px;font-weight:800;color:var(--green);display:flex;align-items:center;gap:5px}.active-status i{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green)}.planmini{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;margin-bottom:12px;border-radius:16px;background:#ffffff06;border:1px solid var(--border)}.planmini b{display:block;font-size:13px;margin-top:3px}.planmini strong{font-size:12px;color:var(--cyan)}.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-120px);background:#15263d;border:1px solid var(--border);padding:11px 15px;border-radius:13px;font-size:12px;z-index:50;transition:.35s;box-shadow:var(--shadow)}.toast.show{transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:#020812aa;backdrop-filter:blur(8px);display:none;align-items:end;justify-content:center;z-index:40}.modal.show{display:flex}.sheet{width:min(100%,520px);background:#0c192b;border:1px solid var(--border);border-radius:25px 25px 0 0;padding:20px;animation:up .25s ease}.sheet h3{margin:0 0 14px}@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}} 
+@media(min-width:521px){.app{border-left:1px solid #ffffff05;border-right:1px solid #ffffff05}}
+
+
+.profile-hero{display:flex;align-items:center;gap:14px;margin-top:14px;padding:18px}
+.avatar{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:800;background:linear-gradient(135deg,#6d5dfc,#24d6a3);box-shadow:0 10px 30px rgba(76,65,255,.25)}
+.profile-main{min-width:0}.profile-name{font-size:20px;font-weight:800}.profile-id{font-size:12px;opacity:.65;margin-top:5px;display:flex;align-items:center;gap:5px}.copy-mini{border:0;background:rgba(255,255,255,.08);color:inherit;border-radius:7px;padding:4px 7px;font-size:10px}.status-pill{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:11px;padding:5px 9px;border-radius:999px;background:rgba(44,210,143,.1);color:#42dca0}.status-pill span{width:6px;height:6px;border-radius:50%;background:#42dca0}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.stat-card{padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:16px;background:rgba(255,255,255,.035)}.stat-card span{font-size:18px}.stat-card b{display:block;margin-top:8px;font-size:15px}.stat-card small{display:block;margin-top:3px;opacity:.55;font-size:11px}
+.profile-details{margin-top:12px}.section-title{font-weight:800;margin-bottom:5px}.detail-row{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}.detail-row:last-child{border-bottom:0}.detail-row span{opacity:.58}.detail-row strong{text-align:right}.green{color:#42dca0}.full-btn{width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;font-weight:800;color:inherit;background:rgba(255,255,255,.07)}.full-btn.secondary{background:linear-gradient(135deg,#35336d,#272554)}.full-btn.danger{background:rgba(255,82,110,.08);color:#ff7188}
+
+
+
+.auth-card{text-align:center;margin-top:14px;padding:22px}.auth-icon{font-size:34px;margin-bottom:8px}.auth-card h3{margin:0;font-size:19px}.auth-card p{font-size:12px;opacity:.58;line-height:1.5}.auth-input{width:100%;box-sizing:border-box;margin-top:9px;padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.045);color:inherit;outline:none}.auth-input:focus{border-color:rgba(112,95,255,.8);box-shadow:0 0 0 3px rgba(112,95,255,.12)}.auth-note{font-size:10px;opacity:.45;margin-top:12px;line-height:1.4}
+
+
+
+#notificationDot{position:absolute;right:-5px;top:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:linear-gradient(135deg,#ff416c,#ff1744);color:#fff;font-size:9px;font-weight:900;line-height:19px;text-align:center;border:2px solid #07111f;box-sizing:border-box;display:none;box-shadow:0 4px 12px rgba(255,65,108,.45);z-index:3} .notification-sheet{max-height:82vh;overflow:auto}.notification-item{padding:13px;border:1px solid var(--border);background:#ffffff06;border-radius:15px;margin-bottom:8px}.notification-item.unread{border-color:#6c63ff55;background:#6c63ff0d}.notification-item h4{margin:0 0 5px;font-size:13px}.notification-item p{margin:0;color:#c1cde0;font-size:12px;line-height:1.45}.notification-item small{display:block;color:var(--muted);font-size:10px;margin-top:7px}.notification-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.notification-head button{border:0;background:none;color:#9eafff;font-size:11px;font-weight:800}
+
+
+
+</style>
+
+<style id="auth-mode-cleanup">
+#authModeSwitch{background:none;border:0;color:#9d8cff;font-weight:800;padding:4px 0;cursor:pointer}
+#authModeHint{text-align:center;margin:8px 0 14px;opacity:.9}
+.auth-signup-only{display:none}
+body.auth-signup .auth-signup-only{display:block}
+body.auth-signup #authName, body.auth-signup #authMobile{display:block}
+body.auth-login #authName, body.auth-login #authMobile{display:none}
+body.auth-signup #authLoginBtn{display:none}
+body.auth-login #authCreateBtn{display:none}
+</style>
+
+<style id="support-contact-style">
+.support-card{margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:16px;background:#ffffff05}
+.support-card b{display:block;margin-bottom:4px}
+.support-card small{display:block;color:var(--muted);line-height:1.4;margin-bottom:9px}
+.support-card a{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#07140b;background:#25D366;border-radius:10px;padding:9px 12px;font-weight:900;font-size:12px}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="modal" id="notificationModal" onclick="if(event.target===this)closeNotifications()"><div class="sheet notification-sheet"><div class="notification-head"><h3 style="margin:0">Notifications</h3><span style="font-size:10px;color:var(--muted)">Tap a notification to open it — it will be marked as read automatically</span></div><div id="notificationList"><div class="loading">Loading...</div></div><button type="button" class="full-btn secondary" onclick="closeNotifications()">Close</button></div></div>
+<div class="app">
+<header class="top">
+  <div class="brand"><div class="logo">₿</div><div><b>Earnly</b><small>Rewards • Secured</small></div></div>
+  <div class="top-actions">
+    <button class="top-action-btn" id="notificationBtn" onclick="showNotifications()" aria-label="Notifications" title="Notifications">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8.5a6 6 0 0 0-12 0c0 6.5-2.5 7.2-2.5 9h17c0-1.8-2.5-2.5-2.5-9Z"/><path d="M10 20.5h4"/></svg>
+      <span id="notificationDot">0</span>
+    </button>
+    <button class="top-action-btn" id="profileTopBtn" onclick="openAccountPanel()" aria-label="Profile" title="Profile">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.2 3-5 6.5-5s5.7 1.8 6.5 5"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<section id="home" class="page active">
+  <div class="hero">
+    <div class="eyebrow">Available balance</div>
+    <div class="balance">PKR <span id="balance">0.00</span></div>
+    <div class="sub">Keep completing eligible activities to increase your balance.</div>
+    <div class="stats"><div class="stat"><b id="today">0.00</b><small>Today's earnings</small></div><div class="stat"><b id="homeAdsCompleted">0 / 6</b><small>Free ads completed</small></div></div>
+  </div>
+  <div class="activeplan">
+    <div class="activeplan-left"><div class="activeplan-icon">✦</div><div><small>ACTIVE PLAN</small><b id="activePlanName">Free Plan</b><span id="activePlanReward">PKR 2 per ad • 6 ads/day</span></div></div>
+    <div class="active-status"><i></i> Active</div>
+  </div>
+  <div class="actions"><button class="btn" onclick="go('ads')">▶ Watch Ads</button><button class="btn alt" onclick="go('deposit')">＋ Deposit</button></div>
+  <div class="section-title"><h2>Choose a plan</h2><span>Configuration</span></div>
+  <div class="cards" id="plans"></div>
+  <div class="notice">Disclaimer: If you experience any issue, please contact Customer Support using the support number provided in your profile.</div>
+  
+</section>
+
+<section id="ads" class="page">
+  <div class="section-title"><h2>Watch & Earn</h2><span id="adsPlanLabel">Free Plan</span></div>
+  <div class="planmini"><div><small>Currently active</small><b id="adsActivePlan">Free Plan</b></div><strong id="adsReward">PKR 2 / ad</strong></div>
+  <div class="hero" style="padding:14px 15px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="eyebrow">Today's ads</div><div style="font-size:25px;font-weight:850"><span id="watched">0</span> <span style="font-size:14px;color:var(--muted);font-weight:600">watched</span></div></div>
+      <div style="text-align:right"><div class="eyebrow">Remaining</div><div style="font-size:25px;font-weight:850;color:var(--cyan)" id="remaining">6</div></div>
+    </div>
+    <div style="height:7px;background:#ffffff0d;border-radius:99px;margin-top:12px;overflow:hidden"><div id="progress" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),var(--cyan));border-radius:99px;transition:.4s"></div></div>
+  </div>
+  <div class="adbox">
+    <div class="adcircle" id="circle"><b id="timer">15</b></div>
+    <h3>Sponsored Activity</h3><p>Complete the timer to record this ad view.</p>
+    <button class="btn watch" id="watchBtn" onclick="startAd()">Start Ad • Earn PKR 2</button>
+  </div>
+  <div class="section-title"><h2>Today's activity</h2><span id="activityCount">0 of 6</span></div>
+  <div class="history"><div class="row"><div>Ad completed<small>Today • 08:01 AM</small></div><b class="plus">+ PKR 2</b></div><div class="row"><div>Ad completed<small>Today • 07:52 AM</small></div><b class="plus">+ PKR 2</b></div></div>
+</section>
+
+<section id="deposit" class="page">
+  <div class="section-title"><h2>Deposit</h2><span>Manual payment</span></div>
+  <div class="hero">
+    <div class="eyebrow">Selected plan</div>
+    <div class="balance" style="font-size:25px" id="selectedPlan">No plan selected</div>
+    <div class="sub">Choose a paid plan below, then complete your payment.</div>
+    <div class="field" style="margin-top:15px">
+      <label>Choose plan</label>
+      <select id="depositPlan" onchange="changeDepositPlan(this.value)">
+        <option value="">Select a plan</option>
+        <option value="Starter">Starter — PKR 1,000</option>
+        <option value="Pro">Pro — PKR 2,000</option>
+        <option value="Premium">Premium — PKR 3,000</option>
+      </select>
+    </div>
+    <div class="sub" style="margin-top:8px">Not enough balance? Complete your payment below and wait for admin approval.</div>
+    <div class="form" style="margin-top:15px">
+      <div class="field"><label>Payment method</label><select id="depMethod"><option>Easypaisa</option><option>JazzCash</option></select></div>
+      <div class="field"><label>Account number</label><div style="display:flex;gap:8px;align-items:center"><input id="accountNumber" value="03498274628" readonly><button class="iconbtn" style="width:36px;height:36px" onclick="copyAccount()">⧉</button></div></div>
+      <div class="field"><label>Account title</label><input value="Mati Ur Rahman" readonly></div>
+      <div class="field"><label>Amount (PKR)</label><input id="depAmt" type="number" placeholder="Enter plan amount"></div>
+      <div class="field"><label>Payment proof</label><input id="proof" type="file" accept="image/*,.pdf"></div>
+      <button class="btn" onclick="deposit()">Submit Payment Proof</button>
+    </div>
+  </div>
+  <div class="notice"><b style="color:#fff">Approval status:</b> After submitting your payment proof, your plan remains <b>Pending Approval</b> until an admin verifies the payment. Your selected plan will activate after approval.</div>
+  <div id="depositStatus" style="display:none;margin-top:12px" class="row" aria-live="polite"><div><span class="deposit-status-title">Payment submitted</span><small class="deposit-status-details">Waiting for admin approval</small></div><b class="deposit-status-badge" style="color:var(--orange)">PENDING</b></div>
+  
+</section>
+
+<section id="withdraw" class="page">
+  <div class="section-title"><h2>Withdraw</h2><span>Request payout</span></div>
+  <div class="hero">
+    <div class="eyebrow">Withdrawable balance</div>
+    <div class="balance" style="font-size:28px">PKR <span id="wbal">0.00</span></div>
+    <div id="withdrawRule" class="notice" style="margin-top:12px">First withdrawal: any amount up to your available balance.</div>
+    <div class="form" style="margin-top:15px">
+      <div class="field"><label>Method</label><select id="withMethod"><option>Easypaisa</option><option>JazzCash</option></select></div>
+      <div class="field"><label>Account / Mobile number</label><input id="withAccount" inputmode="tel" placeholder="03XX XXXXXXX"></div>
+      <div class="field"><label>Amount (PKR)</label><input id="withAmt" type="number" min="0.01" step="0.01" placeholder="Enter amount"></div>
+      <button class="btn" id="withdrawBtn" onclick="withdraw()">Submit Withdrawal Request</button>
+    </div>
+  </div>
+  <div class="section-title"><h2>Withdrawal History</h2><span>Latest first</span></div>
+  <div id="withdrawHistory" class="history"><div class="row"><div>Login to view your withdrawal history<small>Supabase withdrawal records</small></div></div></div>
+  
+</section>
+</main>
+
+<section id="profile" class="page">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">ACCOUNT</div>
+          <h2>My Profile</h2>
+          <p>Your personal account information</p>
+        </div>
+      </div>
+
+<div id="authCard" class="hero auth-card" style="text-align:left">
+  <div class="auth-icon" style="text-align:center">🔐</div>
+  <h3 id="authHeading" style="text-align:center">Create / Login</h3>
+  <p id="authMessage" style="text-align:center">Use your email and password to access your Earnly account.</p>
+  <input class="auth-input auth-signup-only" id="authName" placeholder="Full name (signup only)">
+  <input class="auth-input auth-signup-only" id="authMobile" placeholder="Mobile number">
+  <input class="auth-input" id="authEmail" type="email" placeholder="Email address">
+  <input class="auth-input" id="authPin" type="password" placeholder="Password (minimum 6 characters)">
+  <div id="authModeHint">New user? <button type="button" id="authModeSwitch">Create Account</button></div>
+  <button id="authCreateBtn" class="btn" style="width:100%;margin-top:12px" onclick="signupSupabase()">Create Account</button>
+  <button id="authLoginBtn" class="full-btn" style="width:100%;margin-top:9px" onclick="loginSupabase()">Login</button>
+  <div class="auth-note">Don't forget Email and Password to login again.</div>
+</div>
+      <div class="profile-hero card">
+        <div class="avatar" id="profileAvatar">U</div>
+        <div class="profile-main">
+          <div class="profile-name" id="profileName">User</div>
+          <div class="profile-id">ID: <span id="profileUserId">USR-100001</span>
+            <button class="copy-mini" onclick="navigator.clipboard?.writeText(document.getElementById('profileUserId').textContent);toast('User ID copied')">Copy</button>
+          </div>
+          <div class="status-pill"><span></span> Account Active</div>
+        </div>
+      </div>
+
+      <div class="profile-grid">
+        <div class="stat-card"><span>💰</span><b id="profileBalance">PKR 0.00</b><small>Balance</small></div>
+        <div class="stat-card"><span>📈</span><b id="profileEarnings">PKR 0.00</b><small>Total Earnings</small></div>
+        <div class="stat-card"><span>👁️</span><b id="profileWatched">0</b><small>Ads Watched</small></div>
+        <div class="stat-card"><span>🎯</span><b id="profilePlan">Free Plan</b><small>Current Plan</small></div>
+      </div>
+
+      <div class="card profile-details">
+        <div class="section-title">Account Details</div>
+        <div class="detail-row"><span>Unique User ID</span><strong id="detailUserId">USR-100001</strong></div>
+        <div class="detail-row"><span>Mobile Number</span><strong id="profileMobile">Not added</strong></div>
+        <div class="detail-row"><span>Plan Status</span><strong class="green" id="profilePlanStatus">Active</strong></div>
+        <div class="detail-row"><span>Payment Status</span><strong id="profilePaymentStatus">No pending payment</strong></div>
+      </div>
+
+      <div class="support-card"><b>Need Help?</b><small>Contact the Earnly support team on WhatsApp.</small><a href="https://wa.me/923183304588" target="_blank" rel="noopener">💬 WhatsApp Support</a></div>
+
+      <button class="full-btn secondary" onclick="go('withdraw')">💸 Withdrawal</button>
+      <button class="full-btn danger" onclick="logoutDemo()">↪ Logout</button>
+    </section>
+<nav class="bottom">
+ <button class="nav active" data-page="home" onclick="go('home')"><span class="navicon"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v8.1a2 2 0 0 1-2 2h-4.8v-6h-4.4v6H5a2 2 0 0 1-2-2z"/></svg></span><span>Home</span></button>
+ <button class="nav" data-page="ads" onclick="go('ads')"><span class="navicon"><svg viewBox="0 0 24 24"><path d="m9 6 10 6-10 6z"/><path d="M5 5v14"/></svg></span><span>Earn</span></button>
+ <button class="nav" data-page="deposit" onclick="go('deposit')"><span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></span><span>Deposit</span></button>
+ <button class="nav" data-page="withdraw" onclick="go('withdraw')"><span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 20V9"/><path d="m7 13 5-5 5 5"/><path d="M5 4h14"/></svg></span><span>Withdraw</span></button>
+  <button class="nav" data-page="profile" onclick="go('profile')"><span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.7-3.1 2.8-5 6.5-5s5.8 1.9 6.5 5"/></svg></span><span>Profile</span></button>
+</nav>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><h3 id="modalTitle">Plan</h3><p id="modalText" class="sub"></p><button class="btn" onclick="closeModal()">Continue</button></div></div>
+
+<script>
+const plans=[
+ {name:"Free",icon:"🎁",price:"Free",earn:"PKR 2",ads:"6 ads/day",featured:false},
+ {name:"Starter",icon:"⚡",price:"PKR 1,000",earn:"PKR 80",ads:"6/Per ad",featured:false},
+ {name:"Pro",icon:"🚀",price:"PKR 2,000",earn:"PKR 120",ads:"6/Per ad",featured:true},
+ {name:"Premium",icon:"💎",price:"PKR 3,000",earn:"PKR 150",ads:"6/Per ad",featured:false}
+];
+const plansEl=document.getElementById('plans');
+plans.forEach((p,i)=>plansEl.innerHTML+=`<div class="plan ${p.featured?'featured':''}">${p.featured?'<span class="badge">POPULAR</span>':''}<div class="plan-head"><div class="plan-icon">${p.icon}</div><div><h3>${p.name}</h3><div class="price">${p.price} <small>${p.price==='Free'?'':'plan'}</small></div></div></div><div class="details"><div class="pill">Reward<b>${p.earn}</b></div><div class="pill">Ad limit<b>${p.ads}</b></div></div><button class="btn ${i===0?'alt':''}" onclick="selectPlan('${p.name}','${p.price}','${p.earn}')">${i===0?'Use Free Plan':'Choose '+p.name}</button></div>`);
+
+function go(id){
+ document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.page===id));
+ window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='withdraw') updateWithdrawUI();
+}
+function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function changeDepositPlan(name){
+ const prices={Starter:1000,Pro:2000,Premium:3000};
+ const amount=prices[name];
+ const display=document.getElementById('selectedPlan');
+ const dep=document.getElementById('depAmt');
+ if(!name||!amount){
+   if(display)display.textContent='No plan selected';
+   if(dep)dep.value='';
+   return;
+ }
+ if(display)display.textContent=name+' • PKR '+amount.toLocaleString();
+ if(dep)dep.value=amount;
+}
+function selectPlan(name,price,earn){
+ if(name==='Free'){toast('Free plan selected');go('ads');return}
+ const sel=document.getElementById('depositPlan');
+ if(sel)sel.value=name;
+ changeDepositPlan(name);
+ go('deposit');
+ toast('Plan selected — payment required');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function setActivePlan(name,reward,limit){
+ document.getElementById('activePlanName').textContent=name;
+ document.getElementById('activePlanReward').textContent=reward+' • '+limit;
+ document.getElementById('adsActivePlan').textContent=name;
+ document.getElementById('adsPlanLabel').textContent=name;
+ document.getElementById('adsReward').textContent=reward+' / ad';
+}
+let running=false,secs=15;
+
+function getTodayDate(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function getAdReward(){
+  const plan=currentProfile?.active_plan_name || 'Free Plan';
+  return ({'Free':2,'Free Plan':2,'Starter':80,'Starter Plan':80,'Pro':120,'Pro Plan':120,'Premium':150,'Premium Plan':150})[plan] ?? 2;
+}
+
+function getCurrentAdDayKey(){
+  return getTodayDate();
+}
+
+function getPlanKey(){
+  const p=currentProfile?.active_plan_id || currentProfile?.active_plan_name || 'Free Plan';
+  return String(p);
+}
+
+function getDailyState(){
+  if(!currentProfile?.id) return {
+    date:getTodayDate(),
+    totalEarnings:0,
+    plans:{}
+  };
+
+  const today=getTodayDate();
+  const key='earnly_daily_state_'+currentProfile.id;
+
+  try{
+    const raw=localStorage.getItem(key);
+    if(raw){
+      const data=JSON.parse(raw);
+
+      if(data && data.date===today){
+        if(!data.plans) data.plans={};
+        return data;
+      }
+    }
+  }catch(e){}
+
+  return {
+    date:today,
+    totalEarnings:
+      currentProfile.earnings_date===today
+        ? Number(currentProfile.today_earnings||0)
+        : 0,
+    plans:{}
+  };
+}
+
+function saveDailyState(data){
+  if(!currentProfile?.id) return;
+
+  try{
+    localStorage.setItem(
+      'earnly_daily_state_'+currentProfile.id,
+      JSON.stringify(data)
+    );
+  }catch(e){}
+}
+
+function getCurrentPlanDailyState(){
+  const data=getDailyState();
+  const planKey=getPlanKey();
+
+  if(!data.plans[planKey]){
+    data.plans[planKey]={
+      watched:0,
+      earnings:0
+    };
+    saveDailyState(data);
+  }
+
+  return {
+    data,
+    plan:data.plans[planKey]
+  };
+}
+
+function resetPlanAllowance(){
+  const data=getDailyState();
+  const planKey=getPlanKey();
+
+  data.plans[planKey]={
+    watched:0,
+    earnings:0
+  };
+
+  saveDailyState(data);
+}
+
+function updateDailyUI(){
+  if(!currentProfile)return;
+
+  const state=getCurrentPlanDailyState();
+  const todayAds=Math.max(
+    0,
+    Math.min(6,Number(state.plan.watched||0))
+  );
+
+  // IMPORTANT:
+  // Today Earnings contains ALL earnings made today,
+  // including earnings from the old plan before an upgrade.
+  const todayEarn=Math.max(
+    0,
+    Number(state.data.totalEarnings||0)
+  );
+
+  const todayEl=document.getElementById('today');
+  if(todayEl)todayEl.textContent=todayEarn.toFixed(2);
+
+  const watchedEl=document.getElementById('watched');
+  if(watchedEl)watchedEl.textContent=todayAds;
+
+  const remainingEl=document.getElementById('remaining');
+  if(remainingEl)remainingEl.textContent=Math.max(0,6-todayAds);
+
+  const progressEl=document.getElementById('progress');
+  if(progressEl)progressEl.style.width=((todayAds/6)*100)+'%';
+
+  const activityCount=document.getElementById('activityCount');
+  if(activityCount)activityCount.textContent=todayAds+' of 6';
+
+  const homeAdsCompleted=document.getElementById('homeAdsCompleted');
+  if(homeAdsCompleted)homeAdsCompleted.textContent=todayAds+' / 6';
+
+  const watchBtn=document.getElementById('watchBtn');
+
+  if(watchBtn&&!running){
+    if(todayAds>=6){
+      watchBtn.disabled=true;
+      watchBtn.textContent='✓ Daily Limit Completed';
+    }else{
+      watchBtn.disabled=false;
+      watchBtn.textContent='Start Ad • Earn PKR '+getAdReward();
+    }
+  }
+}
+
+async function startAd(){
+  if(running)return;
+  if(!currentProfile)return toast('Please login first');
+  const state=getCurrentPlanDailyState();
+  const todayAds=Number(state.plan.watched||0);
+  if(todayAds>=6){updateDailyUI();return toast('You have completed all 6 ads for this plan today');}
+  running=true;secs=15;
+  const btn=document.getElementById('watchBtn'),timer=document.getElementById('timer'),circle=document.getElementById('circle');
+  if(btn){btn.disabled=true;btn.textContent='Watching… 15s';}
+  if(timer)timer.textContent='15';
+  const iv=setInterval(async()=>{
+    secs--;if(timer)timer.textContent=secs;if(btn)btn.textContent=`Watching… ${secs}s`;
+    if(circle){const deg=((15-secs)/15)*360;circle.style.background=`conic-gradient(var(--cyan) ${deg}deg,#ffffff10 ${deg}deg)`;}
+    if(secs<=0){
+      clearInterval(iv);running=false;
+      const reward=getAdReward();const saved=await addBalance(reward);
+      if(saved){if(btn)btn.textContent='✓ Completed • Earned PKR '+reward;toast('Demo ad completed: + PKR '+reward);updateDailyUI();setTimeout(()=>{if(btn&&!running)updateDailyUI();},1800);}
+      else if(btn){btn.disabled=false;btn.textContent='Start Ad • Earn PKR '+reward;}
+    }
+  },1000);
+}
+
+async function addBalance(reward){
+  if(!currentProfile?.id){
+    toast('Please login first');
+    return false;
+  }
+
+  const today=getTodayDate();
+  const daily=getDailyState();
+  const planKey=getPlanKey();
+
+  if(!daily.plans[planKey]){
+    daily.plans[planKey]={
+      watched:0,
+      earnings:0
+    };
+  }
+
+  let todayAds=Number(daily.plans[planKey].watched||0);
+  let planEarnings=Number(daily.plans[planKey].earnings||0);
+
+  if(todayAds>=6){
+    updateDailyUI();
+    toast('Daily limit reached for this plan');
+    return false;
+  }
+
+  let balance=Number(currentProfile.balance||0);
+  let total=Number(currentProfile.total_earnings||0);
+  let lifetimeAds=Number(currentProfile.total_ads_watched||0);
+
+  const amount=Number(reward);
+
+  balance+=amount;
+  total+=amount;
+  lifetimeAds+=1;
+
+  // Total earnings for the calendar day includes BOTH:
+  // old-plan earnings + new-plan earnings after an upgrade.
+  daily.totalEarnings=
+    Number(daily.totalEarnings||0)+amount;
+
+  todayAds+=1;
+  planEarnings+=amount;
+
+  daily.plans[planKey]={
+    watched:todayAds,
+    earnings:planEarnings
+  };
+
+  // Save permanent totals plus the total earnings for today.
+  // today_ads_watched represents the CURRENT plan's 0-6 allowance.
+  const {data,error}=await supabaseClient
+    .from('profiles')
+    .update({
+      balance:balance,
+      total_earnings:total,
+      total_ads_watched:lifetimeAds,
+      today_earnings:daily.totalEarnings,
+      today_ads_watched:todayAds,
+      earnings_date:today
+    })
+    .eq('id',currentProfile.id)
+    .select('*')
+    .single();
+
+  if(error){
+    console.error('Reward save failed:',error);
+    toast(error.message||'Reward could not be saved');
+    return false;
+  }
+
+  currentProfile={
+    ...currentProfile,
+    ...data
+  };
+
+  saveDailyState(daily);
+
+  updateAccountUI();
+  updateDailyUI();
+
+  return true;
+}
+
+async function syncDepositStatus(){
+  if(!currentProfile?.id)return;
+
+  const request=getPendingDeposit();
+  if(!request){
+    renderPendingDeposit();
+    return;
+  }
+
+  /*
+    IMPORTANT:
+    Always check the exact deposit ID first.
+    The old RPC can return a different/latest deposit, which could make
+    a rejected deposit incorrectly remain PENDING.
+  */
+  let dbRow=null;
+
+  if(request.id){
+    try{
+      const result=await supabaseClient
+        .from('deposits')
+        .select('id,status,plan_id,created_at,amount')
+        .eq('id',request.id)
+        .eq('user_id',currentProfile.id)
+        .maybeSingle();
+
+      if(!result.error && result.data){
+        dbRow=result.data;
+      }else if(result.error){
+        console.warn('Exact deposit lookup failed:',result.error);
+      }
+    }catch(e){
+      console.warn('Exact deposit lookup exception:',e);
+    }
+  }
+
+  /*
+    Only use the RPC when the exact database row was not available.
+    If the RPC returns an array, find THIS deposit by ID instead of blindly
+    taking the first/latest row.
+  */
+  if(!dbRow){
+    try{
+      const result=await supabaseClient.rpc('get_my_deposit_status');
+
+      if(!result.error && result.data){
+        if(Array.isArray(result.data)){
+          dbRow=result.data.find(row=>
+            row &&
+            row.id &&
+            request.id &&
+            String(row.id)===String(request.id)
+          ) || null;
+        }else if(result.data.id){
+          // A single-row RPC is safe only when it matches the current record.
+          if(!request.id || String(result.data.id)===String(request.id)){
+            dbRow=result.data;
+          }
+        }
+      }
+    }catch(e){
+      console.warn('Deposit status RPC failed:',e);
+    }
+  }
+
+  if(dbRow){
+    const status=String(dbRow.status||'pending').trim().toLowerCase();
+
+    if(status==='approved'){
+      updateDepositRecord(request.id,{
+        status:'approved',
+        approvedAt:request.approvedAt || new Date().toISOString()
+      });
+
+      if(
+        request.planId &&
+        currentProfile.active_plan_id &&
+        String(request.planId)===String(currentProfile.active_plan_id)
+      ){
+        resetPlanAllowance();
+      }
+
+      renderPendingDeposit();
+      return;
+    }
+
+    if(status==='rejected'){
+      updateDepositRecord(request.id,{
+        status:'rejected',
+        rejectedAt:request.rejectedAt || new Date().toISOString()
+      });
+
+      // DO NOT clear/remove the record.
+      // It must remain visible as REJECTED.
+      renderPendingDeposit();
+      return;
+    }
+
+    // Do not overwrite a locally known final status when the database
+    // query is unavailable because of RLS/network issues.
+    const localState=String(request.status||'pending').trim().toLowerCase();
+    if(localState!=='approved' && localState!=='rejected'){
+      updateDepositRecord(request.id,{status:'pending'});
+    }
+    renderPendingDeposit();
+    return;
+  }
+
+  /*
+    If the exact DB row cannot be read, do NOT overwrite a locally stored
+    REJECTED/APPROVED record back to PENDING.
+  */
+  const localState=String(request.status||'pending').trim().toLowerCase();
+
+  if(localState==='rejected' || localState==='approved'){
+    renderPendingDeposit();
+    return;
+  }
+
+  /*
+    No status API available: approval can still be inferred from the
+    activated plan. Rejection cannot safely be inferred from the profile.
+  */
+  if(
+    (
+      request.planId &&
+      currentProfile.active_plan_id &&
+      String(request.planId)===String(currentProfile.active_plan_id)
+    ) ||
+    (
+      request.planName &&
+      currentProfile.active_plan_name &&
+      (
+        String(request.planName).toLowerCase()===String(currentProfile.active_plan_name).toLowerCase() ||
+        String(request.planName+' Plan').toLowerCase()===String(currentProfile.active_plan_name).toLowerCase()
+      )
+    )
+  ){
+    updateDepositRecord(request.id,{
+      status:'approved',
+      approvedAt:request.approvedAt || new Date().toISOString()
+    });
+
+    resetPlanAllowance();
+    renderPendingDeposit();
+    return;
+  }
+
+  renderPendingDeposit();
+}
+
+function getDepositHistoryKey(){
+  return currentProfile?.id
+    ? 'earnly_deposit_history_' + currentProfile.id
+    : null;
+}
+
+function getDepositHistory(){
+  const key=getDepositHistoryKey();
+  if(!key)return [];
+
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw)return [];
+
+    const data=JSON.parse(raw);
+    return Array.isArray(data)?data:[];
+  }catch(err){
+    console.warn('Could not read deposit history:',err);
+    return [];
+  }
+}
+
+function saveDepositHistory(history){
+  const key=getDepositHistoryKey();
+  if(!key)return;
+
+  try{
+    localStorage.setItem(key,JSON.stringify(history));
+  }catch(err){
+    console.warn('Could not save deposit history:',err);
+  }
+}
+
+function addDepositRecord(data){
+  const history=getDepositHistory();
+
+  // Avoid duplicate records when the page reloads.
+  const existingIndex=history.findIndex(x=>
+    data.id &&
+    x.id &&
+    String(x.id)===String(data.id)
+  );
+
+  if(existingIndex>=0){
+    history[existingIndex]={
+      ...history[existingIndex],
+      ...data
+    };
+  }else{
+    history.unshift(data);
+  }
+
+  saveDepositHistory(history);
+}
+
+function updateDepositRecord(id,changes){
+  if(!id)return;
+
+  const history=getDepositHistory();
+  const index=history.findIndex(x=>
+    x.id && String(x.id)===String(id)
+  );
+
+  if(index<0)return;
+
+  history[index]={
+    ...history[index],
+    ...changes
+  };
+
+  saveDepositHistory(history);
+}
+
+function getLatestDeposit(){
+  const history=getDepositHistory();
+  return history.length?history[0]:null;
+}
+
+/*
+  Backward compatibility with the previous single-pending storage.
+  Old pending records are migrated into the new permanent history.
+*/
+function migrateOldDepositRecord(){
+  if(!currentProfile?.id)return;
+
+  const oldKey='earnly_pending_deposit_'+currentProfile.id;
+
+  try{
+    const raw=localStorage.getItem(oldKey);
+
+    if(raw){
+      const old=JSON.parse(raw);
+
+      if(old && old.planName && old.amount){
+        addDepositRecord(old);
+      }
+
+      // Remove only the OLD duplicate storage key.
+      // The actual deposit record remains in deposit history.
+      localStorage.removeItem(oldKey);
+    }
+  }catch(err){}
+}
+
+function renderPendingDeposit(){
+  const status=document.getElementById('depositStatus');
+  if(!status)return;
+
+  migrateOldDepositRecord();
+
+  const history=getDepositHistory();
+
+  if(!history.length){
+    status.style.display='none';
+    return;
+  }
+
+  status.style.display='block';
+
+  // Show the complete deposit history, newest first.
+  status.innerHTML=`
+    <div style="width:100%">
+      <div style="font-weight:900;margin-bottom:10px">
+        Deposit History
+      </div>
+
+      ${history.map((request,index)=>{
+
+        const state=String(request.status||'pending').toLowerCase();
+
+        let title='Payment submitted';
+        let badge='PENDING';
+        let badgeColor='var(--orange)';
+        let message='Waiting for admin approval';
+
+        if(state==='approved'){
+          title='Payment approved';
+          badge='APPROVED';
+          badgeColor='#38e08f';
+          message='Your plan is active';
+        }
+
+        if(state==='rejected'){
+          title='Payment rejected';
+          badge='REJECTED';
+          badgeColor='#ff5575';
+          message='Payment was rejected by admin';
+        }
+
+        const date=request.submittedAt
+          ? new Date(request.submittedAt).toLocaleString()
+          : '';
+
+        return `
+          <div style="
+            padding:12px 0;
+            ${index<history.length-1?'border-bottom:1px solid rgba(255,255,255,.08)':''}
+          ">
+            <div style="
+              display:flex;
+              align-items:center;
+              justify-content:space-between;
+              gap:10px
+            ">
+              <span style="font-weight:900">${title}</span>
+
+              <b style="
+                color:${badgeColor};
+                font-size:11px;
+                letter-spacing:.4px
+              ">${badge}</b>
+            </div>
+
+            <small style="
+              display:block;
+              margin-top:5px;
+              opacity:.78;
+              line-height:1.6
+            ">
+              ${String(request.planName||'Plan')}
+              • PKR ${Number(request.amount||0).toLocaleString()}
+              • ${message}
+              ${date?' • '+date:''}
+            </small>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function getPendingDeposit(){
+  const history=getDepositHistory();
+  return history.find(x=>
+    String(x.status||'pending').toLowerCase()==='pending'
+  ) || null;
+}
+
+function savePendingDeposit(data){
+  addDepositRecord(data);
+}
+
+function clearPendingDeposit(){
+  // Intentionally does NOTHING.
+  // Approved and rejected deposits must remain in history.
+}
+
+
+function copyAccount(){
+ navigator.clipboard?.writeText('03498274628');
+ toast('Account number copied');
+}
+async function deposit(){
+ const btn=document.querySelector('#deposit button.btn');
+ const amount=+document.getElementById('depAmt').value;
+ const file=document.getElementById('proof').files[0];
+ if(!currentProfile)return toast('Please login first');
+ if(!amount||amount<=0)return toast('Enter the payment amount');
+ if(!file)return toast('Please upload payment proof');
+ const planName=(document.getElementById('depositPlan')?.value||'').trim();
+ const planMap={'Starter':1000,'Pro':2000,'Premium':3000};
+ const expected=planMap[planName];
+ if(expected && amount!==expected)return toast('Amount does not match the selected plan');
+ if(btn){btn.disabled=true;btn.textContent='Submitting...'}
+ try{
+   const {data:{user},error:userError}=await supabaseClient.auth.getUser();
+   if(userError||!user)throw new Error('Please login again');
+   const {data:plans,error:planError}=await supabaseClient.from('plans').select('id,name,price').in('name',[planName,planName+' Plan']).eq('is_active',true).limit(1);
+   if(planError)throw planError;
+   if(!plans?.length)throw new Error('Selected plan not found');
+   const plan=plans[0];
+   if(Number(plan.price)!==amount)throw new Error('Amount does not match the selected plan');
+   const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+   const path=user.id+'/'+Date.now()+'_'+crypto.randomUUID()+'_'+safeName;
+   const {error:uploadError}=await supabaseClient.storage.from('payment-proofs').upload(path,file,{upsert:false});
+   if(uploadError)throw uploadError;
+   const {data:depositId,error:insertError}=await supabaseClient.rpc('submit_deposit',{
+     p_plan_id:plan.id,
+     p_amount:amount
+   });
+   if(insertError){await supabaseClient.storage.from('payment-proofs').remove([path]);throw insertError;}
+   console.log('Deposit created:',depositId);
+
+   // Persist the pending request locally so the status survives page reloads.
+   savePendingDeposit({
+     id: depositId || null,
+     planId: plan.id,
+     planName: planName,
+     amount: amount,
+     submittedAt: new Date().toISOString(),
+     status: 'pending'
+   });
+
+   renderPendingDeposit();
+   setTimeout(()=>syncDepositStatus(),300);
+   toast('Proof submitted — waiting for approval');
+ }catch(err){
+   console.error('Deposit submission failed:',err);
+   toast(err.message||'Could not submit payment proof');
+ }finally{if(btn){btn.disabled=false;btn.textContent='Submit Payment Proof'}}
+}
+async function withdraw(){
+  if(!currentProfile?.id)return toast('Please login first');
+  const amount=Number(document.getElementById('withAmt')?.value||0);
+  const method=(document.getElementById('withMethod')?.value||'').trim();
+  const accountNumber=(document.getElementById('withAccount')?.value||'').trim();
+  const btn=document.getElementById('withdrawBtn');
+  if(!amount||amount<=0)return toast('Enter a withdrawal amount');
+  if(!method)return toast('Select a withdrawal method');
+  if(!accountNumber)return toast('Enter your account / mobile number');
+  if(amount>Number(currentProfile.balance||0))return toast('Insufficient balance');
+
+  // IMPORTANT: only APPROVED withdrawals count as completed withdrawals.
+  // Rejected and pending requests never move the user to second-withdrawal rules.
+  let approvedCount=0;
+  try{
+    const {data:history,error:historyError}=await supabaseClient.rpc('get_my_withdrawals');
+    if(!historyError && Array.isArray(history)){
+      approvedCount=history.filter(x=>String(x.status||'').toLowerCase()==='approved').length;
+    }
+  }catch(e){
+    console.warn('Could not read withdrawal history before submit:',e);
+  }
+
+  // Client-side message only. The secure Supabase RPC remains the final authority.
+  if(approvedCount>0){
+    if(Number(currentProfile.balance||0)<500){
+      return toast('Second withdrawal requires a minimum balance of PKR 500.');
+    }
+    // We do not infer paid-plan state from the frontend. The secure RPC checks it.
+  }
+
+  if(btn){btn.disabled=true;btn.textContent='Submitting...';}
+  try{
+    const {data,error}=await supabaseClient.rpc('submit_withdrawal',{
+      p_amount:amount,
+      p_method:method,
+      p_account_number:accountNumber
+    });
+    if(error){
+      const msg=String(error.message||'');
+      if(/active paid plan/i.test(msg)){
+        throw new Error('Second withdrawal requires an active paid plan.');
+      }
+      if(/pk?r? ?500|500 balance|minimum balance/i.test(msg)){
+        throw new Error('Second withdrawal requires a minimum balance of PKR 500.');
+      }
+      throw error;
+    }
+    toast('Withdrawal submitted — waiting for admin approval');
+    document.getElementById('withAmt').value='';
+    document.getElementById('withAccount').value='';
+    if(data?.balance_after!==undefined)currentProfile={...currentProfile,balance:Number(data.balance_after)};
+    else await loadProfile();
+    updateAccountUI();
+    await updateWithdrawUI();
+  }catch(err){
+    console.error('Withdrawal submission failed:',err);
+    toast(err.message||'Could not submit withdrawal');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Submit Withdrawal Request';}
+  }
+}
+async function loadWithdrawals(){
+  if(!currentProfile?.id){renderWithdrawHistory([]);return;}
+  // Use the protected RPC so RLS cannot hide the user's own withdrawal history.
+  // It returns ALL rows: pending, approved and rejected. Nothing is deleted.
+  const {data,error}=await supabaseClient.rpc('get_my_withdrawals');
+  if(error){
+    console.error('Withdrawal history failed:',error);
+    const box=document.getElementById('withdrawHistory');
+    if(box) box.innerHTML='<div class="row"><div><b>Withdrawal history could not be loaded</b><small>'+escWithdraw(error.message||'Database error')+'</small></div></div>';
+    return;
+  }
+  renderWithdrawHistory(Array.isArray(data)?data:[]);
+}
+let withdrawalHistoryRows=[];
+let withdrawalHistoryExpanded=false;
+
+function renderWithdrawHistory(rows){
+  const box=document.getElementById('withdrawHistory');if(!box)return;
+  withdrawalHistoryRows=(Array.isArray(rows)?rows:[]).slice().sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+  const list=withdrawalHistoryExpanded?withdrawalHistoryRows:withdrawalHistoryRows.slice(0,2);
+  const approvedCount=withdrawalHistoryRows.filter(x=>String(x.status||'').toLowerCase()==='approved').length;
+  const rule=document.getElementById('withdrawRule');
+  if(rule){
+    rule.innerHTML=approvedCount>0
+      ? 'Second and later withdrawals: <b>PKR 500 minimum balance</b> + <b>active paid plan</b>.'
+      : 'First withdrawal: <b>any amount</b> from your available balance. No paid plan required.';
+  }
+  if(!withdrawalHistoryRows.length){
+    box.innerHTML='<div class="row"><div>No withdrawal requests yet<small>Your submitted withdrawals will appear here.</small></div></div>';
+    return;
+  }
+  box.innerHTML=list.map(x=>{
+    const status=String(x.status||'pending').toLowerCase();
+    const color=status==='approved'?'var(--green)':status==='rejected'?'var(--red)':'var(--orange)';
+    const label=status==='approved'?'APPROVED':status==='rejected'?'REJECTED':'PENDING';
+    const sign=status==='rejected'?'+ ':'− ';
+    const message=status==='approved'?'Approved by admin':status==='rejected'?'Rejected — amount refunded':'Waiting for admin approval';
+    const date=x.created_at?new Date(x.created_at).toLocaleString():'';
+    const processed=x.processed_at?new Date(x.processed_at).toLocaleString():'';
+    return `<div class="row"><div><b>Withdrawal • <span style="color:${color}">${label}</span></b><small>${escWithdraw(x.method)} • ${escWithdraw(x.account_number)}<br>${message}${date?' • Submitted: '+date:''}${processed?' • Processed: '+processed:''}</small></div><b style="color:${color}">${sign}PKR ${Number(x.amount||0).toLocaleString()}</b></div>`;
+  }).join('') + (withdrawalHistoryRows.length>2 ? `<button type="button" class="full-btn secondary" style="margin-top:10px" onclick="toggleWithdrawHistory()">${withdrawalHistoryExpanded?'Show Less':'Show More'}</button>` : '');
+}
+
+function toggleWithdrawHistory(){
+  withdrawalHistoryExpanded=!withdrawalHistoryExpanded;
+  renderWithdrawHistory(withdrawalHistoryRows);
+}
+function escWithdraw(v){return String(v??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+async function updateWithdrawUI(){
+  const bal=document.getElementById('wbal');if(bal)bal.textContent=Number(currentProfile?.balance||0).toFixed(2);
+  const rule=document.getElementById('withdrawRule');
+  if(rule&&!currentProfile?.id)rule.innerHTML='Please login to view withdrawal rules.';
+  await loadWithdrawals();
+}
+
+
+
+
+
+const SUPABASE_URL = "https://kgzubocjiafiqqpdwqtq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_kJhdmVtaBB03VS77hasGJQ_aYu3KIw7";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
+
+let currentProfile = null;
+
+function getDemoUser(){ return currentProfile; }
+function saveDemoUser(user){ currentProfile = user; }
+
+async function loadProfile(){
+  const {data:{user}} = await supabaseClient.auth.getUser();
+  if(!user){ currentProfile=null; updateAccountUI(); return null; }
+
+  // First use the profile RPC when available.
+  let {data:profile, error} = await supabaseClient.rpc('get_my_profile');
+
+  // If the RPC is missing, returns an error, or returns no row, fall back
+  // to the profiles table. The Step 1 database trigger should normally
+  // have created this row automatically when the Auth user was created.
+  if(error || !profile){
+    if(error) console.warn('Profile RPC unavailable/failed; using direct profile lookup:', error);
+
+    const {data:directProfile, error:directError} = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if(directError){
+      console.error('Direct profile lookup failed:', directError);
+      toast('Login successful, but profile could not be loaded');
+      return null;
+    }
+
+    profile = directProfile;
+
+    // Safety fallback for an Auth user created before the trigger was installed.
+    if(!profile){
+      const meta = user.user_metadata || {};
+      const baseCode = 'USR-' + user.id.replace(/-/g,'').slice(0,8).toUpperCase();
+
+      const {data:created, error:createError} = await supabaseClient
+        .from('profiles')
+        .insert({
+          id: user.id,
+          user_code: baseCode,
+          full_name: meta.full_name || '',
+          mobile: meta.mobile || ''
+        })
+        .select('*')
+        .single();
+
+      if(createError){
+        console.error('Profile fallback creation failed:', createError);
+        toast('Login successful, but profile setup is not available');
+        return null;
+      }
+
+      profile = created;
+    }
+  }
+
+  // Resolve the real plan name from active_plan_id. Never display generic "Paid Plan".
+  if(profile.active_plan_id){
+    const {data:plan, error:planError} = await supabaseClient
+      .from('plans')
+      .select('id,name,price')
+      .eq('id', profile.active_plan_id)
+      .maybeSingle();
+    if(!planError && plan){
+      profile.active_plan_name = plan.name;
+      profile.active_plan_price = plan.price;
+    } else {
+      console.warn('Active plan lookup failed:', planError);
+    }
+  } else {
+    profile.active_plan_name = 'Free Plan';
+    profile.active_plan_price = 0;
+  }
+
+  if(profile.active_plan_id){
+    const {data:plan,error:planError}=await supabaseClient.from('plans').select('id,name,price').eq('id',profile.active_plan_id).maybeSingle();
+    if(!planError && plan){
+      profile.active_plan_name=plan.name;
+      profile.active_plan_price=plan.price;
+    }
+  }else{
+    profile.active_plan_name='Free Plan';
+    profile.active_plan_price=0;
+  }
+
+  currentProfile=profile;
+
+  // If the admin has already approved the pending plan, keep the
+  // deposit record and only start a fresh 6-ad allowance.
+  const pending=getPendingDeposit();
+  if(
+    pending &&
+    (
+      (
+        pending.planId &&
+        profile.active_plan_id &&
+        String(pending.planId)===String(profile.active_plan_id)
+      ) ||
+      (
+        pending.planName &&
+        profile.active_plan_name &&
+        (
+          String(pending.planName).toLowerCase()===String(profile.active_plan_name).toLowerCase() ||
+          String(pending.planName+' Plan').toLowerCase()===String(profile.active_plan_name).toLowerCase()
+        )
+      )
+    )
+  ){
+    resetPlanAllowance();
+    const saved=getPendingDeposit();
+    if(saved){
+      updateDepositRecord(saved.id,{
+        status:'approved',
+        approvedAt:saved.approvedAt || new Date().toISOString()
+      });
+    }
+  }
+
+  updateAccountUI();
+  updateDailyUI();
+  renderPendingDeposit();
+  await loadNotifications();
+  setupNotificationRealtime();
+  return profile;
+}
+
+function updateAccountUI(){
+  syncTopProfile();
+  const u=currentProfile, logged=!!u;
+  const auth=document.getElementById('authCard');
+  if(auth) auth.style.display=logged?'none':'block';
+  if(!logged) return;
+
+  const name=u.full_name||'User', id=u.user_code||'USR-000000';
+  const mobile=u.mobile||'Not added';
+
+  ['profileUserId','detailUserId'].forEach(x=>{
+    const e=document.getElementById(x); if(e)e.textContent=id;
+  });
+  const pn=document.getElementById('profileName'); if(pn)pn.textContent=name;
+  const pm=document.getElementById('profileMobile'); if(pm)pm.textContent=mobile;
+  const av=document.getElementById('profileAvatar'); if(av)av.textContent=(name[0]||'U').toUpperCase();
+
+  const balance=Number(u.balance||0).toFixed(2);
+  const withdrawBalanceEl=document.getElementById('wbal'); if(withdrawBalanceEl)withdrawBalanceEl.textContent=balance;
+  const earnings=Number(u.total_earnings||0).toFixed(2);
+  const watched=Number(u.total_ads_watched||0);
+
+  const b=document.getElementById('balance'); if(b)b.textContent=balance;
+  const wb=document.getElementById('wbal'); if(wb)wb.textContent=balance;
+  const pb=document.getElementById('profileBalance'); if(pb)pb.textContent='PKR '+balance;
+  const pe=document.getElementById('profileEarnings'); if(pe)pe.textContent='PKR '+earnings;
+  const pw=document.getElementById('profileWatched'); if(pw)pw.textContent=watched;
+
+  const plan=u.active_plan_name || (u.active_plan_id ? 'Paid Plan' : 'Free Plan');
+  const planName=document.getElementById('profilePlan'); if(planName)planName.textContent=plan;
+  const activeName=document.getElementById('activePlanName'); if(activeName)activeName.textContent=plan;
+
+  // Keep Home/Profile/Ads synchronized with the approved plan.
+  const rewardMap={
+    'Free':2,'Free Plan':2,
+    'Starter':80,'Starter Plan':80,
+    'Pro':120,'Pro Plan':120,
+    'Premium':150,'Premium Plan':150
+  };
+  const reward=rewardMap[plan] ?? 2;
+  const limit=6;
+  const rewardText='PKR '+reward+' per ad • '+limit+' ads/day';
+  const rewardEl=document.getElementById('activePlanReward'); if(rewardEl)rewardEl.textContent=rewardText;
+  const adsPlan=document.getElementById('adsActivePlan'); if(adsPlan)adsPlan.textContent=plan;
+  const adsLabel=document.getElementById('adsPlanLabel'); if(adsLabel)adsLabel.textContent=plan;
+  const adsReward=document.getElementById('adsReward'); if(adsReward)adsReward.textContent='PKR '+reward+' / ad';
+  const watchBtn=document.getElementById('watchBtn'); if(watchBtn && !running)watchBtn.textContent='Start Ad • Earn PKR '+reward;
+}
+
+// Keep the UI synchronized with the profile returned by Supabase.
+function updateAccountUI(){
+  syncTopProfile();
+  const u=currentProfile, logged=!!u;
+  const auth=document.getElementById('authCard');
+  if(auth) auth.style.display=logged?'none':'block';
+  if(!logged) return;
+
+  const name=u.full_name||'User';
+  const id=u.user_code||'USR-000000';
+  const mobile=u.mobile||'Not added';
+  ['profileUserId','detailUserId'].forEach(x=>{const e=document.getElementById(x);if(e)e.textContent=id;});
+  const pn=document.getElementById('profileName');if(pn)pn.textContent=name;
+  const pm=document.getElementById('profileMobile');if(pm)pm.textContent=mobile;
+  const av=document.getElementById('profileAvatar');if(av)av.textContent=(name[0]||'U').toUpperCase();
+
+  const balance=Number(u.balance||0).toFixed(2);
+  const earnings=Number(u.total_earnings||0).toFixed(2);
+  const watched=Number(u.total_ads_watched||0);
+  const b=document.getElementById('balance');if(b)b.textContent=balance;
+  const wb=document.getElementById('wbal');if(wb)wb.textContent=balance;
+  const pb=document.getElementById('profileBalance');if(pb)pb.textContent='PKR '+balance;
+  const pe=document.getElementById('profileEarnings');if(pe)pe.textContent='PKR '+earnings;
+  const pw=document.getElementById('profileWatched');if(pw)pw.textContent=watched;
+
+  const plan=u.active_plan_name || (u.active_plan_id ? 'Paid Plan' : 'Free Plan');
+  const profilePlan=document.getElementById('profilePlan');if(profilePlan)profilePlan.textContent=plan;
+  const activeName=document.getElementById('activePlanName');if(activeName)activeName.textContent=plan;
+
+  const rewardMap={'Free':2,'Free Plan':2,'Starter':80,'Starter Plan':80,'Pro':120,'Pro Plan':120,'Premium':150,'Premium Plan':150};
+  const reward=rewardMap[plan] ?? 2;
+  const rewardText='PKR '+reward+' per ad • 6 ads/day';
+  const rewardEl=document.getElementById('activePlanReward');if(rewardEl)rewardEl.textContent=rewardText;
+  const profileReward=document.getElementById('profileActivePlanReward');if(profileReward)profileReward.textContent=rewardText;
+  const profileActive=document.getElementById('profileActivePlanName');if(profileActive)profileActive.textContent=plan;
+  const adsPlan=document.getElementById('adsActivePlan');if(adsPlan)adsPlan.textContent=plan;
+  const adsLabel=document.getElementById('adsPlanLabel');if(adsLabel)adsLabel.textContent=plan;
+  const adsReward=document.getElementById('adsReward');if(adsReward)adsReward.textContent='PKR '+reward+' / ad';
+  const watchBtn=document.getElementById('watchBtn');if(watchBtn&&!running)watchBtn.textContent='Start Ad • Earn PKR '+reward;
+  updateDailyUI();
+}
+
+let planRefreshTimer=null;
+function startPlanAutoRefresh(){
+  if(planRefreshTimer)clearInterval(planRefreshTimer);
+  planRefreshTimer=setInterval(async()=>{
+    if(!currentProfile)return;
+    const oldId=currentProfile.active_plan_id||null;
+    const fresh=await loadProfile();
+    const newId=fresh?.active_plan_id||null;
+    if(newId&&newId!==oldId)toast('Your plan is now active');
+  },5000);
+}
+function openAccountPanel(){ updateAccountUI(); go('profile'); }
+
+async function signupSupabase(){
+  const name=(document.getElementById('authName')?.value||'').trim();
+  const mobile=(document.getElementById('authMobile')?.value||'').trim();
+  const email=(document.getElementById('authEmail')?.value||'').trim();
+  const password=(document.getElementById('authPin')?.value||'').trim();
+
+  if(!name||!mobile||!email||password.length<6)
+    return toast('Enter name, mobile, email and 6+ character password');
+
+  const {data,error}=await supabaseClient.auth.signUp({
+    email,
+    password,
+    options:{ data:{ full_name:name, mobile:mobile } }
+  });
+  if(error) return toast(error.message);
+  if(!data.user) return toast('Account could not be created');
+
+  // Profile creation is handled by the Supabase database trigger
+  // created in Step 1. Do not insert into profiles from the browser.
+  if(data.session){
+    const profile = await loadProfile();
+    if(profile){
+      toast('Account created successfully');
+      go('home');
+    }else{
+      toast('Account created, but profile is still loading');
+    }
+  }else{
+    toast('Account created. Please login to continue.');
+  }
+}
+
+async function loginSupabase(){
+  const email=(document.getElementById('authEmail')?.value||'').trim();
+  const password=(document.getElementById('authPin')?.value||'').trim();
+  if(!email||!password) return toast('Enter email and password');
+
+  const btn = document.querySelector('#authCard button.full-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Logging in...'; }
+
+  try{
+    const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+    if(error) return toast(error.message);
+
+    // Auth is successful. Load the profile created by the database trigger.
+    const profile = await loadProfile();
+
+    if(profile){
+      toast('Login successful');
+      go('home');
+    }else{
+      toast('Login successful, but profile could not be loaded');
+    }
+  }catch(err){
+    console.error('Login error:', err);
+    toast('Login successful, but profile could not be loaded');
+    go('home');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='Login'; }
+  }
+}
+
+async function logoutDemo(){
+  await supabaseClient.auth.signOut();
+  currentProfile=null; notificationRows=[]; withdrawalHistoryRows=[]; withdrawalHistoryExpanded=false; if(notificationChannel){try{supabaseClient.removeChannel(notificationChannel);}catch(e){}} updateAccountUI(); syncNotificationBadge(); go('home'); toast('Logged out');
+}
+
+async function initSupabase(){
+  // Supabase restores a session only on the same device/browser. A new mobile/device has no stored session and must use Login.
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  if(session){ await loadProfile(); updateDailyUI(); startPlanAutoRefresh(); } else updateAccountUI();
+  supabaseClient.auth.onAuthStateChange(async (_event,session)=>{
+    if(session){ await loadProfile(); updateDailyUI(); startPlanAutoRefresh(); }
+    else { if(planRefreshTimer) clearInterval(planRefreshTimer); if(notificationChannel){try{supabaseClient.removeChannel(notificationChannel);}catch(e){}} notificationRows=[]; currentProfile=null; updateAccountUI(); syncNotificationBadge();}
+  });
+}
+
+document.addEventListener('DOMContentLoaded',initSupabase);
+
+let notificationRows=[];
+let notificationChannel=null;
+
+async function loadNotifications(){
+  if(!currentProfile?.id){
+    notificationRows=[];
+    syncNotificationBadge();
+    return;
+  }
+  const {data,error}=await supabaseClient.rpc('get_my_notifications');
+  if(error){ console.warn('Notification load failed:',error); return; }
+  notificationRows=Array.isArray(data)?data:[];
+  syncNotificationBadge();
+  renderNotifications();
+}
+
+function syncNotificationBadge(){
+  const badge=document.getElementById('notificationDot');
+  if(!badge)return;
+  const count=notificationRows.filter(n=>!n.is_read).length;
+  if(count>0){ badge.style.display='block'; badge.textContent=count>99?'99+':String(count); }
+  else badge.style.display='none';
+}
+
+function renderNotifications(){
+  const box=document.getElementById('notificationList');
+  if(!box)return;
+  if(!notificationRows.length){ box.innerHTML='<div class="empty">No notifications yet.</div>'; return; }
+  box.innerHTML=notificationRows.map(n=>`<div class="notification-item ${n.is_read?'':'unread'}" onclick="readNotification('${escWithdraw(n.id)}')"><h4>${escWithdraw(n.title)}</h4><p>${escWithdraw(n.message)}</p><small>${n.created_at?new Date(n.created_at).toLocaleString():''}${n.is_read?'':' • New'}</small></div>`).join('');
+}
+
+async function readNotification(id){
+  const {error}=await supabaseClient.rpc('mark_notification_read',{p_notification_id:id});
+  if(error){toast(error.message);return;}
+  const n=notificationRows.find(x=>String(x.id)===String(id));
+  if(n)n.is_read=true;
+  syncNotificationBadge();
+  renderNotifications();
+}
+
+async function markAllNotificationsRead(){
+  const {error}=await supabaseClient.rpc('mark_all_notifications_read');
+  if(error){toast(error.message);return;}
+  notificationRows.forEach(n=>n.is_read=true);
+  syncNotificationBadge();
+  renderNotifications();
+}
+
+function showNotifications(){
+  if(!currentProfile){ toast('Please login to view notifications'); return; }
+  const modal=document.getElementById('notificationModal');
+  if(modal)modal.classList.add('show');
+  loadNotifications();
+}
+function closeNotifications(){
+  const modal=document.getElementById('notificationModal');
+  if(modal)modal.classList.remove('show');
+}
+
+function setupNotificationRealtime(){
+  if(!currentProfile?.id)return;
+  if(notificationChannel){ try{supabaseClient.removeChannel(notificationChannel);}catch(e){} }
+  notificationChannel=supabaseClient.channel('user-notifications-'+currentProfile.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+currentProfile.id},payload=>{
+      notificationRows=[payload.new,...notificationRows.filter(x=>String(x.id)!==String(payload.new.id))];
+      syncNotificationBadge();
+      renderNotifications();
+    }).subscribe();
+}
+
+function syncTopProfile(){
+  syncNotificationBadge();
+}
+</script>
+
+
+    
+<script id="auth-mode-controller">
+document.addEventListener('DOMContentLoaded', function(){
+  let mode = 'login';
+  const switchBtn = document.getElementById('authModeSwitch');
+  const hint = document.getElementById('authModeHint');
+  const heading = document.getElementById('authHeading');
+  const message = document.getElementById('authMessage');
+  const name = document.getElementById('authName');
+  const mobile = document.getElementById('authMobile');
+
+  function renderAuthMode(){
+    document.body.classList.toggle('auth-signup', mode === 'signup');
+    document.body.classList.toggle('auth-login', mode === 'login');
+
+    if(mode === 'login'){
+      heading.textContent = 'Login';
+      message.textContent = 'Use your email and password to access your Earnly account.';
+      hint.innerHTML = 'New user? <button type="button" id="authModeSwitch">Create Account</button>';
+      if(name) name.required = false;
+      if(mobile) mobile.required = false;
+    }else{
+      heading.textContent = 'Create Account';
+      message.textContent = 'Create your Earnly account with your basic details.';
+      hint.innerHTML = 'Already have an account? <button type="button" id="authModeSwitch">Login</button>';
+      if(name) name.required = true;
+      if(mobile) mobile.required = true;
+    }
+
+    document.getElementById('authModeSwitch').onclick = function(){
+      mode = mode === 'login' ? 'signup' : 'login';
+      renderAuthMode();
+    };
+  }
+
+  renderAuthMode();
+});
+</script>
+
+<script>
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    if(currentProfile)syncDepositStatus();
+  },800);
+
+  setInterval(async()=>{
+    if(currentProfile){
+      const beforePlan=currentProfile.active_plan_id;
+      const profile=await loadProfile();
+
+      if(
+        profile &&
+        beforePlan &&
+        profile.active_plan_id &&
+        String(beforePlan)!==String(profile.active_plan_id)
+      ){
+        resetPlanAllowance();
+        updateDailyUI();
+      }
+
+      syncDepositStatus();
+    }
+  },30000);
+});
+</script>
+</body>
+</html>
