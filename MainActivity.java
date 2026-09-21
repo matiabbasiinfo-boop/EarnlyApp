@@ -3,17 +3,23 @@ package com.earnly.app;
 import android.app.Activity;
 import android.os.Bundle;
 import android.graphics.Color;
+import android.net.Uri;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.content.Intent;
 
 public class MainActivity extends Activity {
 
     private WebView webView;
-    private boolean homeShown = true;
+    private ValueCallback<Uri[]> filePathCallback;
+
+    private static final int FILE_CHOOSER_REQUEST = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,11 +27,11 @@ public class MainActivity extends Activity {
 
         Window window = getWindow();
 
-        // Keep Android status bar and navigation bar visible
-        window.setStatusBarColor(Color.rgb(7, 19, 42));
-        window.setNavigationBarColor(Color.rgb(7, 19, 42));
+        // Dark system bars
+        window.setStatusBarColor(Color.rgb(7, 17, 31));
+        window.setNavigationBarColor(Color.rgb(7, 17, 31));
 
-        // Normal system-bar icon mode
+        // Keep system icons suitable for the dark background
         window.getDecorView().setSystemUiVisibility(0);
 
         webView = new WebView(this);
@@ -35,80 +41,35 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
+
         settings.setAllowFileAccess(true);
         settings.setAllowContentAccess(true);
 
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
+        settings.setSupportZoom(false);
+
         settings.setMediaPlaybackRequiresUserGesture(false);
 
-        webView.setWebViewClient(new                            top = insets.getSystemWindowInsetTop();
-                            bottom = insets.getSystemWindowInsetBottom();
-                        }
+        webView.setWebViewClient(new WebViewClient());
 
-                        /*
-                         * THIS is the important part.
-                         *
-                         * Move WebView itself below the status bar.
-                         */
-                        FrameLayout.LayoutParams params =
-                                (FrameLayout.LayoutParams)
-                                        webView.getLayoutParams();
+        webView.setWebChromeClient(new WebChromeClient() {
 
-                        params.topMargin = top;
-                        params.bottomMargin = bottom;
-                        params.leftMargin = 0;
-                        params.rightMargin = 0;
+            @Override
+            public boolean onShowFileChooser(
+                    WebView webView,
+                    ValueCallback<Uri[]> filePathCallback,
+                    FileChooserParams fileChooserParams) {
 
-                        webView.setLayoutParams(params);
-
-                        return insets;
-                    }
+                if (MainActivity.this.filePathCallback != null) {
+                    MainActivity.this.filePathCallback.onReceiveValue(null);
                 }
-        );
 
-        setContentView(root);
+                MainActivity.this.filePathCallback = filePathCallback;
 
-        // Existing HTML remains completely unchanged.
-        webView.loadUrl("file:///android_asset/index.html");
-    }
+                Intent intent = fileChooserParams.createIntent();
 
-    @Override
-    public void onBackPressed() {
-
-        if (!homeShown) {
-
-            webView.evaluateJavascript(
-                    "if(typeof go === 'function'){go('home');}",
-                    null
-            );
-
-            homeShown = true;
-            return;
-        }
-
-        super.onBackPressed();
-    }
-
-    @Override
-    protected void onDestroy() {
-
-        if (webView != null) {
-            webView.destroy();
-            webView = null;
-        }
-
-        super.onDestroy();
-    }
-}                         *
-                         * The WebView does NOT occupy the status-bar
-                         * area anymore.
-                         */
-                        view.setPadding(
-                                0,
-                                topInset,
-                                0,
-                                bottomInset
+                                               bottomInset
                         );
 
                         return insets;
